@@ -12,19 +12,19 @@ const checkFile = withOptions(lockfile.check);
 const lockFile = withOptions(lockfile.lock);
 
 module.exports = class WebpackMutexPlugin {
-  constructor({ file, onLocked } = {}) {
+  constructor({ file, locked } = {}) {
     if (!file) {
       throw new Error(`WebpackMutexPlugin requires a lock file path`);
     }
 
     this.file = file;
-    this.onLocked = onLocked || (() => null);
+    this.locked = locked || (() => null);
   }
 
   lock() {
     checkFile(this.file).then(locked => {
       if (locked) {
-        return this.onLocked();
+        return this.locked();
       }
 
       lockFile(this.file);
