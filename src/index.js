@@ -19,16 +19,21 @@ module.exports = class WebpackMutexPlugin {
 
     this.file = file;
     this.locked = locked || (() => null);
+    this.firstStart = true;
   }
 
   lock() {
-    checkFile(this.file).then(locked => {
-      if (locked) {
-        return this.locked();
-      }
+    if (this.firstStart) {
+      checkFile(this.file).then(locked => {
+        if (locked) {
+          return this.locked();
+        }
 
-      lockFile(this.file);
-    });
+        lockFile(this.file).then(() => {
+          this.firstStart = false;
+        });
+      });
+    }
   }
 
   apply(compiler) {
