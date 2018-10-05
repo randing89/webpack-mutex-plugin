@@ -10,15 +10,17 @@ function withOptions(func) {
 
 const checkFile = withOptions(lockfile.check);
 const lockFile = withOptions(lockfile.lock);
+const noop = () => null;
 
 module.exports = class WebpackMutexPlugin {
-  constructor({ file, locked } = {}) {
+  constructor({ file, locked, compromised } = {}) {
     if (!file) {
       throw new Error(`WebpackMutexPlugin requires a lock file path`);
     }
 
     this.file = file;
-    this.locked = locked || (() => null);
+    this.locked = locked || noop;
+    this.compromised = compromised || noop;
     this.firstStart = true;
   }
 
@@ -29,7 +31,7 @@ module.exports = class WebpackMutexPlugin {
           return this.locked();
         }
 
-        lockFile(this.file).then(() => {
+        lockFile(this.file, { onCompromised: this.compromised }).then(() => {
           this.firstStart = false;
         });
       });
