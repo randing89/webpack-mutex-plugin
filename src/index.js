@@ -1,8 +1,9 @@
 const lockfile = require("proper-lockfile");
 
 function withOptions(func) {
-  return (...args) => {
-    return func(...args, {
+  return (file, opts) => {
+    return func(file, {
+      ...opts,
       realpath: false
     });
   };
@@ -13,7 +14,7 @@ const lockFile = withOptions(lockfile.lock);
 const noop = () => null;
 
 module.exports = class WebpackMutexPlugin {
-  constructor({ file, locked, compromised } = {}) {
+  constructor({ file, locked, compromised, retries } = {}) {
     if (!file) {
       throw new Error(`WebpackMutexPlugin requires a lock file path`);
     }
@@ -21,6 +22,7 @@ module.exports = class WebpackMutexPlugin {
     this.file = file;
     this.locked = locked || noop;
     this.compromised = compromised || noop;
+    this.retries = retries || 1;
     this.firstStart = true;
   }
 
@@ -31,10 +33,13 @@ module.exports = class WebpackMutexPlugin {
           return this.locked();
         }
 
-        lockFile(this.file, { onCompromised: this.compromised }).then(() => {
+        lockFile(this.file, {
+          retries: this.retries,
+          onCompromised: this.compromised
+        }).then(() => {
           this.firstStart = false;
-        });
-      });
+        })
+      })
     }
   }
 
